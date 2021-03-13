@@ -1,0 +1,25 @@
+# Linux
+.directory
+*~
+
+
+# npm
+node_modules
+package-lock.json
+*.log
+*.gz
+
+
+# Coveralls
+coverage
+
+# Benchmarking
+benchmarks/graphs
+
+# client-stage-directory
+client-stage-directory
+tmp-client-stage-directory
+
+# volume
+data
+logs

@@ -1,0 +1,77 @@
+version: '3.4'
+services: 
+  rabbitmq:
+    image: rabbitmq:3
+    container_name: 'my-rabbitmq-container'
+    volumes:
+      - ./RabbitMQ/rabbitmq-volume/data/:/var/lib/rabbitmq/
+      - ./RabbitMQ/rabbitmq-volume/logs/:/var/log/rabbitmq/
+    environment:
+            RABBITMQ_DEFAULT_USER: 'bdp'
+            RABBITMQ_DEFAULT_PASS: 'bdp-2021'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 15s
+      retries: 1
+    restart: "no"
+    logging:
+      driver: "none"
+  mysimbdp-daas:
+    image: mysimbdp-daas
+    build: 
+      context: ./mysimbdp-daas
+      dockerfile: Dockerfile
+      target: debug
+    container_name: mysimbdp-daas
+    volumes: 
+      - /tmp/mysimbdp-daas/npm-cache:/root/.npm:z
+      - ./mysimbdp-daas:/usr/src/mysimbdp-daas:z
+    ports: 
+      - "3001:3001"
+      - "9229:9229"
+    environment: 
+      - PORT=3001
+      - DB_CONNECT=mongodb+srv://admin:rootbdp2021@bdf-a1-cluster1.padsg.mongodb.net/?retryWrites=true&w=majority
+      - DB_NAME=airbnb
+      - UPLOADED_CSV_KEY=csvFile
+      - RABBIT=amqp://bdp:bdp-2021@rabbitmq:5672
+      - MESSAGE_QUEUE_EXCHANGE=topic_daily_stats
+      - MESSAGE_QUEUE_TOPIC=stat.#
+    depends_on: 
+      - rabbitmq
+    restart: "no"
+  mysimbdp-batchingestmanager:
+    image: mysimbdp-batchingestmanager
+    build: 
+      context: ./mysimbdp-batchingestmanager
+      dockerfile: Dockerfile
+      target: debug
+    container_name: mysimbdp-batchingestmanager
+    volumes: 
+      - /tmp/mysimbdp-batchingestmanager/npm-cache:/root/.npm:z
+      - ./mysimbdp-batchingestmanager:/usr/src/mysimbdp-batchingestmanager:z
+    ports: 
+      - "3002:3002"
+      - "9230:9230"
+    environment: 
+      - PORT=3002
+      - DB_NAME=airbnb
+      - UPLOADED_CSV_KEY=csvFile
+      - SERVER_ADDRESS=http://51.143.2.0:3001/batchIngest
+      - DATA_DIRECTORY=./client-stage-directory/
+      - COLLECTION_NAME=batch
+      - CLIENT_ID=1
+    depends_on: 
+      - mysimbdp-daas
+    restart: "no"
+ 
+ 
+volumes: 
+  rabbitmq-volume:
+    external: true
+    
+  
