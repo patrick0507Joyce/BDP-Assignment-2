@@ -1,20 +1,45 @@
 const router = require("express").Router();
 const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
-const dataIngest = require("../Tools/dataBaseToolKits/dataIngest.js");
-const chunkIngest = require("../Tools/dataBaseToolKits/chunkIngest");
+const csvFileIngest = require("../Tools/dataBaseToolKits/csvFileIngest");
 const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle")
 const fs = require("fs");
+const multistream = require('multistream');
+const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream")
+const openDataBase = require("../Tools/dataBaseToolKits/openDataBase")
+const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream")
 
 router.post("/chunkIngest", (request, response) => {
-  //chunkIngest(request.body, request.query.chunkCount, request.query.collectionName);
   const fileName = request.query.fileName;
   const chunkCount = request.query.chunkCount;
 
   jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
-  if (request.query.chunkCount % 200 === 0) {
+  //console.log(JSON.stringify(request.body));
+  
+  if (request.query.chunkCount % 100 === 0) {
     console.log("fileName", request.query.fileName, "chunkCount", request.query.chunkCount);
   }
 });
+
+router.post("/chunkIngestComplete", (request, response) => {
+  const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName + '/' + request.query.fileName + '.json';
+  const chunkCount = request.query.chunkCount;
+
+  console.log("complete upload on: ",  + request.query.fileName);
+
+  openDataBase(process.env.DB_NAME, request.query.collectionName)
+    .then(client => {
+      
+      openJsonInputStream(fileDirPath)
+      .pipe(openMongodbOutputStream(client.collection))
+    })
+    .then(() => {
+      //console.log("store into db successfully");
+    })
+    .catch((err) => {
+      console.log("error info", err);
+    });
+  
+})
 
 router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
  (request, response) => {
@@ -31,7 +56,7 @@ router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_
         return response.status(400).send("Please check your collectionName!");
       }
 
-      dataIngest(dataPath, collectionName, (err) => {
+      csvFileIngest(dataPath, collectionName, (err) => {
         if (err) {
           console.log("error on the way", err);
           response.status(500).send({

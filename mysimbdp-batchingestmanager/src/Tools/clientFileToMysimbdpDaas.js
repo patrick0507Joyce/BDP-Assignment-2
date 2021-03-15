@@ -1,13 +1,12 @@
-const { default: axios } = require('axios');
-const { request } = require('express');
-const openCsvInputStream = require('./streamToolKits/openCsvInputStream')
-const postJsonInputStream = require('./streamToolKits/postJsonInputStream');
+const openCsvInputStream = require("./streamToolKits/openCsvInputStream");
+const postJsonInputStream = require("./streamToolKits/postJsonInputStream");
+
 const clientFileToMysimbdpDaas = (fileName) => {
   if (!fileName) {
     return;
   }
 
-  let dataPath = process.env.DATA_DIRECTORY + fileName;
+  const dataPath = process.env.DATA_DIRECTORY + fileName;
 
   openCsvInputStream(dataPath)
   .pipe(postJsonInputStream(fileName));

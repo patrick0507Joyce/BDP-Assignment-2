@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const openDataBase = require("../Tools/dataBaseToolKits/openDataBase");
 const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
-const dataIngest = require("../Tools/dataBaseToolKits/dataIngest.js");
+const csvFileIngest = require("../Tools/dataBaseToolKits/csvFileIngest");
 
 const collectionName = "rooms";
 
@@ -21,7 +21,7 @@ router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_
         return response.status(400).send("Please check your collectionName!");
       }
 
-      dataIngest(dataPath, collectionName, (err) => {
+      csvFileIngest(dataPath, collectionName, (err) => {
         if (err) {
           console.log("error on the way", err);
           response.status(500).send({

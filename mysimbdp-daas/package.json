@@ -5,21 +5,25 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "start:dev": "nodemon --inspect=0.0.0.0 index.js"
+    "start:dev": "nodemon --quiet --inspect=0.0.0.0 index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "async-await-parallel": "^1.0.0",
+    "bfj": "^7.0.2",
     "csv-parse": "^4.15.1",
     "csv-split-stream": "^1.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "fs-extra": "^9.1.0",
+    "glob": "^7.1.6",
+    "json-concat": "^0.0.1",
     "minimist": "^1.2.5",
     "mongoose": "^5.11.15",
     "multer": "^1.4.2",
+    "multistream": "^4.1.0",
     "papaparse": "^5.3.0",
     "statman-stopwatch": "^2.11.1",
     "yargs": "^16.2.0"
@@ -29,7 +33,10 @@
   },
   "nodemonConfig": {
     "verbose": true,
-    "ignore": ["/src/tmp-client-stage-directory/*"],
+    "ignore": [
+      "*.json",
+      "./tmp-client-stage-directory/*"
+    ],
     "delay": "2500"
   }
 }

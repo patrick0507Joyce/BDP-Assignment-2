@@ -37,6 +37,8 @@ services:
       - PORT=3001
       - DB_CONNECT=mongodb+srv://admin:rootbdp2021@bdf-a1-cluster1.padsg.mongodb.net/?retryWrites=true&w=majority
       - DB_NAME=airbnb
+      - TMP_DIR_PATH=./tmp-client-stage-directory/
+      - STAGE_DIR_PATH=./client-stage-directory/
       - UPLOADED_CSV_KEY=csvFile
       - RABBIT=amqp://bdp:bdp-2021@rabbitmq:5672
       - MESSAGE_QUEUE_EXCHANGE=topic_daily_stats
@@ -59,9 +61,12 @@ services:
       - "9230:9230"
     environment: 
       - PORT=3002
+      - SERVER_PORT=3001
       - DB_NAME=airbnb
       - UPLOADED_CSV_KEY=csvFile
+      - SERVER_ADDRESS_WAIT=http://51.143.2.0
       - SERVER_ADDRESS=http://51.143.2.0:3001/chunkIngest
+      - SERVER_ADDRESS_COMPLETE=http://51.143.2.0:3001/chunkIngestComplete
       - DATA_DIRECTORY=./client-stage-directory/
       - COLLECTION_NAME=batch
       - CLIENT_ID=1
