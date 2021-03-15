@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { emit } = require("process");
 const stream = require("stream");
 
 const postJsonInputStream = (fileName) => {
@@ -11,13 +12,17 @@ const postJsonInputStream = (fileName) => {
   let collectionName = process.env.COLLECTION_NAME;
   let clientId = process.env.CLIENT_ID;
 
-  const csvOutputStream = new stream.Writable({ objectMode: true, highWaterMark:500 });
+  const csvOutputStream = new stream.Writable({
+    objectMode: true,
+    highWaterMark: 1500
+  });
   let chunkCount = 0;
 
   const slicedFileName = fileName.slice(0, -4);
 
   const uploadCompleted = () => {
     console.log("complete upload");
+    
     axios
       .post(
         process.env.SERVER_ADDRESS_COMPLETE,
@@ -38,15 +43,21 @@ const postJsonInputStream = (fileName) => {
       .catch((error) => {
         //console.error(error);
       });
+      
   };
-
-  csvOutputStream._writev = (chunks, callback) => {
-
+  
+  csvOutputStream.on('finish', () => {
+    console.log("json uploading DONE");
+    uploadCompleted();
+  })
+  
+  csvOutputStream._write = (chunk, encoding, callback) => {
     chunkCount++;
     //console.log({chunkCount});
-    if (chunks.length !== 0) {
+    if (chunk !== null) {
+      
       axios
-        .post(serverAddress, chunks, {
+        .post(serverAddress, chunk, {
           params: {
             collectionName: collectionName,
             clientId: clientId,
@@ -62,21 +73,21 @@ const postJsonInputStream = (fileName) => {
         .catch((error) => {
           //console.error(error);
         });
-
-      if (chunkCount % 2000 == 0) {
+    
+      if (chunkCount % 5 === 0) {
         console.log(
           "fileName",
           fileName,
           "chunk length",
-          chunks.length,
+          chunk.length,
           "output stream:",
-          chunkCount
+          chunkCount,
+
         );
       }
       callback();
     } else {
-      uploadCompleted();
-      csvOutputStream.emit("finish");
+      csvOutputStream.emit('done', 200);
     }
   };
   return csvOutputStream;

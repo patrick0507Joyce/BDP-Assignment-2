@@ -12,7 +12,7 @@ const jsonChunkUploadHandle = (fileName, chunkCount, chunkContent) => {
     .then(() => fs.ensureFile(filePath))
     .then(() => {
       const stream = fs.createWriteStream(filePath, {flags:'a'});
-      stream.write(chunkContent,() => {
+      stream.write(chunkContent.substring(1, chunkContent.length-1),() => {
         stream.close();
       }) 
       /*

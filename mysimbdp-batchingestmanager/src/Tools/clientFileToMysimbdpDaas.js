@@ -10,9 +10,8 @@ const clientFileToMysimbdpDaas = (fileName) => {
 
   const csvInputStream = openCsvInputStream(dataPath);
   const jsonInputStream = postJsonInputStream(fileName);
-  setTimeout(() => {
-    csvInputStream.pipe(jsonInputStream);
-  }, 2000);
+
+  csvInputStream.pipe(jsonInputStream);
 };
 
 module.exports = clientFileToMysimbdpDaas;

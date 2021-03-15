@@ -1,13 +1,13 @@
 const router = require("express").Router();
 const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
 const csvFileIngest = require("../Tools/dataBaseToolKits/csvFileIngest");
-const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle")
+const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle");
 const fs = require("fs");
-const multistream = require('multistream');
-const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream")
-const openDataBase = require("../Tools/dataBaseToolKits/openDataBase")
-const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream")
-const JSONStream = require('JSONStream')
+const multistream = require("multistream");
+const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream");
+const openDataBase = require("../Tools/dataBaseToolKits/openDataBase");
+const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream");
+const JSONStream = require("JSONStream");
 
 router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
@@ -15,38 +15,44 @@ router.post("/chunkIngest", (request, response) => {
 
   //
   //console.log(JSON.stringify(request.body));
-  
-  if (request.query.chunkCount % 5000 === 0) {
-    console.log("fileName", request.query.fileName, "chunkCount", request.query.chunkCount);
-    jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
-  }
+
+  console.log(
+    "fileName",
+    request.query.fileName,
+    "chunkCount",
+    request.query.chunkCount
+  );
+  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
 });
 
 router.post("/chunkIngestComplete", (request, response) => {
-  const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName + '/' + request.query.fileName + '.json';
+  const fileDirPath =
+    process.env.TMP_DIR_PATH +
+    request.query.fileName +
+    "/" +
+    request.query.fileName +
+    ".json";
   const chunkCount = request.query.chunkCount;
 
-  console.log("complete upload on: ",  + request.query.fileName);
+  console.log("complete upload on: ", +request.query.fileName);
 
   openDataBase(process.env.DB_NAME, request.query.collectionName)
-    .then(client => {
-      
+    .then((client) => {
       const jsonInputStream = openJsonInputStream(fileDirPath);
       const mongoOutputStream = openMongodbOutputStream(client.collection);
       jsonInputStream.pipe(mongoOutputStream);
 
+      jsonInputStream.on("pipe", (src) => {
+        console.log("Something is piping into the jsonInputStream.");
+      });
 
-      jsonInputStream.on('pipe', src => {
-        console.log('Something is piping into the jsonInputStream.');
-      })
+      mongoOutputStream.on("finish", (src) => {
+        console.log("finishing writing to MongoDB");
+      });
 
-      mongoOutputStream.on('finish', src => {
-        console.log('finishing writing to MongoDB');
-      })
-
-      mongoOutputStream.on('dataCount', count => {
-        console.log('total count:', count);
-      })
+      mongoOutputStream.on("dataCount", (count) => {
+        console.log("total count:", count);
+      });
     })
     .then(() => {
       //console.log("store into db successfully");
@@ -54,18 +60,19 @@ router.post("/chunkIngestComplete", (request, response) => {
     .catch((err) => {
       console.log("error info", err);
     });
-  
-})
+});
 
-router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
- (request, response) => {
-  const collectionArr = ["reviews", "rooms", "hosts", "batch"];
+router.post(
+  "/batchIngest",
+  fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
+  (request, response) => {
+    const collectionArr = ["reviews", "rooms", "hosts", "batch"];
     try {
       if (request.file == undefined) {
         return response.status(400).send("Please upload a CSV file!");
       }
       const dataPath = request.file.destination + request.file.filename;
-      console.log({dataPath});
+      console.log({ dataPath });
       let collectionName = request.body.collectionName;
 
       if (!collectionArr.includes(collectionName)) {
@@ -91,6 +98,7 @@ router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_
         message: "Could not upload the file: " + request.file.originalname,
       });
     }
-});
+  }
+);
 
 module.exports = router;
