@@ -1,16 +1,16 @@
 {
     "configurations": [
         {
-            "name": "Docker Attach to Node.js batchingestmanager",
+            "name": "Docker Attach to Node.js socketio",
             "type": "node",
             "request": "attach",
-            "remoteRoot": "/usr/src/mysimbdp-daas/src",
+            "remoteRoot": "/mysimbdp-daas/src/",
             "port": 9229,
             "address": "localhost",
-            "localRoot": "${workspaceFolder}/mysimbdp-daas/src",
+            "localRoot": "${workspaceFolder}/mysimbdp-daas/src/",
             "protocol": "inspector",
             "restart": true
-        }
+        },
     ]
 }
 

@@ -1,7 +1,20 @@
 const router = require("express").Router();
 const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
 const dataIngest = require("../Tools/dataBaseToolKits/dataIngest.js");
+const chunkIngest = require("../Tools/dataBaseToolKits/chunkIngest");
+const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle")
 const fs = require("fs");
+
+router.post("/chunkIngest", (request, response) => {
+  //chunkIngest(request.body, request.query.chunkCount, request.query.collectionName);
+  const fileName = request.query.fileName;
+  const chunkCount = request.query.chunkCount;
+
+  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
+  if (request.query.chunkCount % 200 === 0) {
+    console.log("fileName", request.query.fileName, "chunkCount", request.query.chunkCount);
+  }
+});
 
 router.post("/batchIngest",fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
  (request, response) => {

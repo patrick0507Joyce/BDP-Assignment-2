@@ -10,7 +10,7 @@ const roomRoute = require('./src/Routes/roomsRoute');
 const reviewRoute = require('./src/Routes/reviewsRoute');
 const indexRoute = require('./src/Routes/indexRoute');
 //middleware
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 //Route Middlewares
 app.use('/rooms', roomRoute);

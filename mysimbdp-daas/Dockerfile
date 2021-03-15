@@ -1,5 +1,5 @@
 FROM node:15.10.0-alpine3.10 as debug
-WORKDIR /usr/src/mysimbdp-daas/                  
+WORKDIR /mysimbdp-daas/                  
 COPY package*.json ./
 
 CMD npm config set cache-min 9999999 && \
@@ -8,7 +8,7 @@ CMD npm config set cache-min 9999999 && \
 
 FROM node:15.10.0-alpine3.10 as prod
 
-WORKDIR /usr/src/mysimbdp-daas/                  
+WORKDIR /mysimbdp-daas/                  
 COPY package*.json ./
 
 CMD npm config set cache-min 9999999 && \

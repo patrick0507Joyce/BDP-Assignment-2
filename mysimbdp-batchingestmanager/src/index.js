@@ -14,9 +14,10 @@ const postClientFileToDaas = () => {
     fs.readdir(process.env.DATA_DIRECTORY, (err, files) => {
         console.log("Filenames with the .csv extension:");
         if (files) {
-            files.forEach(file => { 
+            files.map(async file =>  { 
                 if (path.extname(file) == ".csv") {
-                    clientFileToMysimbdpDaas(file);
+                    console.log({file});
+                    await clientFileToMysimbdpDaas(file);
                 }
             })
         }
@@ -24,10 +25,11 @@ const postClientFileToDaas = () => {
 }
 
 const checkStagedDirectory = () => {
-    setInterval(postClientFileToDaas, 50000000);
+    setInterval(postClientFileToDaas, 10000);
 };
 
-checkStagedDirectory();
+postClientFileToDaas();
+//checkStagedDirectory();
 
 app.get('/', (request, response) => {
   response.send("connected!");

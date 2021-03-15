@@ -4,8 +4,9 @@ const fs = require('fs-extra');
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
         //const type = file.mimetype;
-        const path = `./tmp-client-stage-directory/`;
+        const path = `./client-stage-directory/`;
         //fs.mkdirsSync(path);
+        fs.ensureDir(path);
         callback(null, path);
       },
       filename: (req, file, callback) => {
