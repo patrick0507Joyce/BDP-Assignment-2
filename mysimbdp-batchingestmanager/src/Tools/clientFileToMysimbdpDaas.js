@@ -8,8 +8,11 @@ const clientFileToMysimbdpDaas = (fileName) => {
 
   const dataPath = process.env.DATA_DIRECTORY + fileName;
 
-  openCsvInputStream(dataPath)
-  .pipe(postJsonInputStream(fileName));
+  const csvInputStream = openCsvInputStream(dataPath);
+  const jsonInputStream = postJsonInputStream(fileName);
+  setTimeout(() => {
+    csvInputStream.pipe(jsonInputStream);
+  }, 2000);
 };
 
 module.exports = clientFileToMysimbdpDaas;

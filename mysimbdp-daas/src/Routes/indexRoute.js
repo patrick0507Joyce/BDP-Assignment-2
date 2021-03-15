@@ -7,16 +7,18 @@ const multistream = require('multistream');
 const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream")
 const openDataBase = require("../Tools/dataBaseToolKits/openDataBase")
 const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream")
+const JSONStream = require('JSONStream')
 
 router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
   const chunkCount = request.query.chunkCount;
 
-  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
+  //
   //console.log(JSON.stringify(request.body));
   
-  if (request.query.chunkCount % 100 === 0) {
+  if (request.query.chunkCount % 5000 === 0) {
     console.log("fileName", request.query.fileName, "chunkCount", request.query.chunkCount);
+    jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
   }
 });
 
@@ -29,8 +31,22 @@ router.post("/chunkIngestComplete", (request, response) => {
   openDataBase(process.env.DB_NAME, request.query.collectionName)
     .then(client => {
       
-      openJsonInputStream(fileDirPath)
-      .pipe(openMongodbOutputStream(client.collection))
+      const jsonInputStream = openJsonInputStream(fileDirPath);
+      const mongoOutputStream = openMongodbOutputStream(client.collection);
+      jsonInputStream.pipe(mongoOutputStream);
+
+
+      jsonInputStream.on('pipe', src => {
+        console.log('Something is piping into the jsonInputStream.');
+      })
+
+      mongoOutputStream.on('finish', src => {
+        console.log('finishing writing to MongoDB');
+      })
+
+      mongoOutputStream.on('dataCount', count => {
+        console.log('total count:', count);
+      })
     })
     .then(() => {
       //console.log("store into db successfully");

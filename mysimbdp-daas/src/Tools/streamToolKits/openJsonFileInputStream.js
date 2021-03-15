@@ -7,7 +7,7 @@ const stream = require('stream');
 //
 function openJsonInputStream (inputFilePath ) {
 
-    const jsonInputStream = new stream.Readable({ objectMode: true });
+    const jsonInputStream = new stream.Readable({ objectMode: true, highWaterMark: 500 });
     jsonInputStream._read = () => {}; // Must include, otherwise we get an error.
 
     const fileInputStream = fs.createReadStream(inputFilePath);
@@ -41,7 +41,7 @@ function openJsonInputStream (inputFilePath ) {
     });
 
     emitter.on(bfj.events.endArray, () => {
-        //jsonInputStream.push(null); // Signify end of stream.
+        jsonInputStream.push(null); // Signify end of stream.
     });
 
     emitter.on(bfj.events.error, err => {
