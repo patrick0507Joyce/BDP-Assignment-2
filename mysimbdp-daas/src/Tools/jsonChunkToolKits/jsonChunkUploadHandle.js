@@ -5,14 +5,14 @@ const jsonChunkUploadHandle = (fileName, chunkCount, chunkContent) => {
   const dirPath = process.env.TMP_DIR_PATH + fileName + "/";
 
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  //let chunkCountNum = Math.round(parseInt(chunkCount, 10) / 100 + 1);
-  const fileNameUnique = fileName + ".json";
+  let chunkCountNum = Math.round(parseInt(chunkCount, 10) / 50 + 1);
+  const fileNameUnique = fileName + "-" + ".json";
   const filePath = dirPath + fileNameUnique;
   fs.ensureDir(dirPath)
     .then(() => fs.ensureFile(filePath))
     .then(() => {
       const stream = fs.createWriteStream(filePath, {flags:'a'});
-      stream.write(chunkContent.substring(1, chunkContent.length-1),() => {
+      stream.write(chunkContent,() => {
         stream.close();
       }) 
       /*

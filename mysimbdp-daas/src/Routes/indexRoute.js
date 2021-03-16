@@ -6,7 +6,9 @@ const fs = require("fs");
 const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream");
 const openDataBase = require("../Tools/dataBaseToolKits/openDataBase");
 const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream");
-
+const glob = require("glob");
+const streamToMongoDB = require('stream-to-mongo-db').streamToMongoDB;
+const JSONStream      = require('JSONStream');
 
 router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
@@ -15,7 +17,7 @@ router.post("/chunkIngest", (request, response) => {
   //
   //console.log(JSON.stringify(request.body));
 
-  if (chunkCount % 100 === 0) {
+  if (chunkCount % 10 === 0) {
     console.log(
       "fileName",
       request.query.fileName,
@@ -27,37 +29,59 @@ router.post("/chunkIngest", (request, response) => {
 });
 
 router.post("/chunkIngestComplete", (request, response) => {
-  const fileDirPath =
+  const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName;
+
+  const fileName =
     process.env.TMP_DIR_PATH +
     request.query.fileName +
     "/" +
     request.query.fileName +
     ".json";
-  const chunkCount = request.query.chunkCount;
 
   console.log("complete upload on: ", +request.query.fileName);
 
   openDataBase(process.env.DB_NAME, request.query.collectionName)
     .then((client) => {
-      const jsonInputStream = openJsonInputStream(fileDirPath);
-      jsonInputStream.pause();
-      const mongoOutputStream = openMongodbOutputStream(client.collection);
-      jsonInputStream.pipe(mongoOutputStream).then(());
+      const outputDBConfig = { dbURL: process.env.DB_CONNECT, collection: 'calendar' };
+      const writableStream = streamToMongoDB(outputDBConfig);
+      let count = 0;
+      setInterval(() => {
+        console.log("count:", count++);
+        const used = process.memoryUsage();
+        for (let key in used) {
+          console.log(`OUTPUT: ${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+        }
+      }, 5000);
 
-      jsonInputStream.on("pipe", (src) => {
-        console.log("Something is piping into the jsonInputStream.");
-      });
+      glob(fileDirPath + "/*.json", (err, files) => {
+        const mongoOutputStream = openMongodbOutputStream(client.collection);
 
-      mongoOutputStream.on("finish", (src) => {   
-        console.log("finishing writing to MongoDB");
-      });
+        files.map((fileName) => {
+          fs.createReadStream(fileName)
+          .pipe(JSONStream.parse('*'))
+          .pipe(writableStream);
 
-      jsonInputStream.on("dataCount", (count) => {
-        console.log("total count:", count);
+          
+          /*
+          const jsonInputStream = openJsonInputStream(fileName);
+          jsonInputStream.pipe(mongoOutputStream);
+
+          jsonInputStream.on("pipe", (src) => {
+            console.log("Something is piping into the jsonInputStream.");
+          });
+
+          
+
+          jsonInputStream.on('dataCount', (count) => {
+            console.log("total count:", count);
+          });
+          */
+        });
       });
     })
     .then(() => {
       //console.log("store into db successfully");
+      client.close();
     })
     .catch((err) => {
       console.log("error info", err);

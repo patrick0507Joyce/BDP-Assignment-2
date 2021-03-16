@@ -17,7 +17,7 @@ const openCsvInputStream = (inputFilePath) => {
 
     chunk: (results) => {
       chunkCount++;      
-      if ( chunkCount % 100 === 0 ) {
+      if ( chunkCount % 2000 === 0 ) {
         console.log(
           "chunk length",
           results.data.length,

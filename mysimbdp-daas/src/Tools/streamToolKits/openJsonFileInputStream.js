@@ -43,8 +43,11 @@ function openJsonInputStream(inputFilePath) {
     objBuffer.push(curObject);
     count++;
     if (count >= 500) {
-      jsonInputStream.resume();
-      jsonInputStream.push(objBuffer);
+        
+        setImmediate(() => {
+            jsonInputStream.push(objBuffer)
+        });
+      
       count = 0;
       objBuffer = [];
     }

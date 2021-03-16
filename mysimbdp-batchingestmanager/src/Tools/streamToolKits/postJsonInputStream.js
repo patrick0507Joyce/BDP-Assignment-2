@@ -46,7 +46,7 @@ const postJsonInputStream = (fileName) => {
       
   };
   
-  csvOutputStream.on('finish', () => {
+  csvOutputStream.on('done', () => {
     console.log("json uploading DONE");
     const used = process.memoryUsage();
     for (let key in used) {
@@ -57,8 +57,7 @@ const postJsonInputStream = (fileName) => {
   
   csvOutputStream._write = (chunk, encoding, callback) => {
     chunkCount++;
-    //console.log({chunkCount});
-    if (chunk !== null) {
+    if (chunk !== null && chunk.length > 0) {
       
       axios
         .post(serverAddress, chunk, {
