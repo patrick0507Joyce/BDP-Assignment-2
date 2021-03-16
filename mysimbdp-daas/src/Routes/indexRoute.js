@@ -17,7 +17,7 @@ router.post("/chunkIngest", (request, response) => {
   //
   //console.log(JSON.stringify(request.body));
 
-  if (chunkCount % 10 === 0) {
+  if (chunkCount % 100 === 0) {
     console.log(
       "fileName",
       request.query.fileName,
@@ -42,7 +42,7 @@ router.post("/chunkIngestComplete", (request, response) => {
 
   openDataBase(process.env.DB_NAME, request.query.collectionName)
     .then((client) => {
-      const outputDBConfig = { dbURL: process.env.DB_CONNECT, collection: 'calendar' };
+      const outputDBConfig = { dbURL: process.env.DB_CONNECT, collection: 'xiaohu' };
       const writableStream = streamToMongoDB(outputDBConfig);
       let count = 0;
       setInterval(() => {
@@ -60,28 +60,11 @@ router.post("/chunkIngestComplete", (request, response) => {
           fs.createReadStream(fileName)
           .pipe(JSONStream.parse('*'))
           .pipe(writableStream);
-
-          
-          /*
-          const jsonInputStream = openJsonInputStream(fileName);
-          jsonInputStream.pipe(mongoOutputStream);
-
-          jsonInputStream.on("pipe", (src) => {
-            console.log("Something is piping into the jsonInputStream.");
-          });
-
-          
-
-          jsonInputStream.on('dataCount', (count) => {
-            console.log("total count:", count);
-          });
-          */
         });
       });
     })
     .then(() => {
-      //console.log("store into db successfully");
-      client.close();
+      console.log("store into db successfully");
     })
     .catch((err) => {
       console.log("error info", err);

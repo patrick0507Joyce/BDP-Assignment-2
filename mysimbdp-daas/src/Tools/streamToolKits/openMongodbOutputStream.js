@@ -2,7 +2,7 @@
 
 const stream = require("stream");
 
-const openMongodbOutputStream = (dbCollection) => {
+const openMongodbOutputStream = (dbCollection, options) => {
   const config = Object.assign(
     // default config
     {
@@ -12,7 +12,7 @@ const openMongodbOutputStream = (dbCollection) => {
     // overrided options
     options
   );
-  let recordBuffer = 0;
+  let recordBuffer = [];
   let count = 0;
   const csvOutputStream = new stream.Writable({
     objectMode: true,
@@ -22,7 +22,7 @@ const openMongodbOutputStream = (dbCollection) => {
   csvOutputStream._write = (record, encoding, callback) => {
     count++;
 
-    if (count % 2000 === 0) {
+    if (count % 5 === 0) {
       console.log(
         "count:",
         count,
