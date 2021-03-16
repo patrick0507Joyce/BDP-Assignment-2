@@ -5,7 +5,7 @@ const fs = require("fs");
 const papaparse = require("papaparse");
 
 const openCsvInputStream = (inputFilePath) => {
-  const csvInputStream = new stream.Readable({ objectMode: true, highWaterMark:100 });
+  const csvInputStream = new stream.Readable({ objectMode: true, highWaterMark:5 });
   csvInputStream._read = () => {}; // Must include, otherwise we get an error.
 
   let chunkCount = 0;
@@ -15,11 +15,21 @@ const openCsvInputStream = (inputFilePath) => {
     dynamicTyping: true,
     skipEmptyLines: true,
 
-    step: (results) => {
+    chunk: (results) => {
       chunkCount++;      
-      for (let row of results.data) {
-        csvInputStream.push(row);    
-      }  
+      if ( chunkCount % 100 === 0 ) {
+        console.log(
+          "chunk length",
+          results.data.length,
+          "input stream:",
+          chunkCount,
+          "readable size:",
+          csvInputStream.readableLength
+
+        );
+      }
+      csvInputStream.push(results.data);    
+      
     },
 
     complete: () => {

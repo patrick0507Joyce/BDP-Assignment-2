@@ -14,7 +14,7 @@ const postJsonInputStream = (fileName) => {
 
   const csvOutputStream = new stream.Writable({
     objectMode: true,
-    highWaterMark: 2
+    highWaterMark: 5
   });
   let chunkCount = 0;
 
@@ -55,13 +55,13 @@ const postJsonInputStream = (fileName) => {
     uploadCompleted();
   })
   
-  csvOutputStream._writev = (chunks, callback) => {
+  csvOutputStream._write = (chunk, encoding, callback) => {
     chunkCount++;
     //console.log({chunkCount});
-    if (chunks !== null) {
+    if (chunk !== null) {
       
       axios
-        .post(serverAddress, chunks, {
+        .post(serverAddress, chunk, {
           params: {
             collectionName: collectionName,
             clientId: clientId,
@@ -79,20 +79,19 @@ const postJsonInputStream = (fileName) => {
         });
         
     
-      if (chunkCount % 10000 === 0) {
+      if (chunkCount % 100 === 0) {
         console.log(
           "fileName",
           fileName,
           "chunk length",
-          chunks.length,
+          chunk.length,
           "output stream:",
           chunkCount,
           "writable size:",
           csvOutputStream.writableLength
-
         );
       }
-      callback();
+      return callback();
     } else {
       csvOutputStream.emit('done', 200);
     }
