@@ -6,7 +6,7 @@ const openMongodbOutputStream = (dbCollection, options) => {
   const config = Object.assign(
     // default config
     {
-      batchSize: 500,
+      batchSize: 100,
       insertOptions: { w: 1 },
     },
     // overrided options

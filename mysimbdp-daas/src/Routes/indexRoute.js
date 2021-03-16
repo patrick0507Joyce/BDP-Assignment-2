@@ -64,7 +64,7 @@ router.post("/chunkIngestComplete", (request, response) => {
       });
     })
     .then(() => {
-      console.log("store into db successfully");
+      //console.log("store into db successfully");
     })
     .catch((err) => {
       console.log("error info", err);
