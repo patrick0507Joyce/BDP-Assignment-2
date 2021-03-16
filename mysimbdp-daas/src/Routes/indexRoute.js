@@ -22,7 +22,7 @@ router.post("/chunkIngest", (request, response) => {
     "chunkCount",
     request.query.chunkCount
   );
-  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
+  //jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
 });
 
 router.post("/chunkIngestComplete", (request, response) => {
@@ -32,7 +32,7 @@ router.post("/chunkIngestComplete", (request, response) => {
     "/" +
     request.query.fileName +
     ".json";
-  const chunkCount = request.query.chunkCount;
+  const chunkCount = request.query.chunkCount; 
 
   console.log("complete upload on: ", +request.query.fileName);
 
