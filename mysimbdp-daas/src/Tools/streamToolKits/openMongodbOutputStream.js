@@ -13,21 +13,21 @@ const openMongodbOutputStream = (dbCollection, options) => {
     options
   );
   let recordBuffer = [];
-  let count = 0;
+  let rowCount = 0;
   const csvOutputStream = new stream.Writable({
     objectMode: true,
     highWaterMark: 3,
   });
 
   csvOutputStream._write = (record, encoding, callback) => {
-    count++;
+    rowCount++;
 
-    if (count % 5 === 0) {
+    if (rowCount % 5 === 0) {
       console.log(
         "count:",
-        count,
+        rowCount,
         "chunk length:",
-        chunk.length,
+        record.length,
         "writable length: ",
         csvOutputStream.writableLength
       );
@@ -43,7 +43,12 @@ const openMongodbOutputStream = (dbCollection, options) => {
 
     if (record !== null) {
       if (recordBuffer.length < config.batchSize) {
-        recordBuffer.push(record);
+        if (Array.isArray(record)) {
+          recordBuffer.concat(record);
+        } else {
+          recordBuffer.push(record);
+        }
+        callback();
       } else {
         dbCollection
           .insertMany(recordBuffer, { ordered: false })
@@ -58,21 +63,19 @@ const openMongodbOutputStream = (dbCollection, options) => {
       }
     }
   };
+
   csvOutputStream.on("finish", () => {
-    if (recordBuffer.length > 0) {
-      dbCollection
-        .insertMany(recordBuffer, { ordered: false })
-        .then(() => {
-          recordBuffer = [];
-          callback();
-          console.log("------------------------------------------");
-        })
-        .catch((err) => {
-          //console.log(chunk);
-          callback(err);
-        });
+    try {
+      if (recordBuffer.length > 0) {
+        dbCollection.insertMany(recordBuffer, { ordered: false });
+      }
+      console.log("MONGO DONE");
+      csvOutputStream.emit("close");
+    } catch (error) {
+      csvOutputStream.emit("error", error);
     }
   });
+
   return csvOutputStream;
 };
 

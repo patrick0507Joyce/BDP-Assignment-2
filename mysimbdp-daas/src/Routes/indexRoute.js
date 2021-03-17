@@ -1,20 +1,17 @@
 const router = require("express").Router();
-const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
-const csvFileIngest = require("../Tools/dataBaseToolKits/csvFileIngest");
-const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle");
 const fs = require("fs");
-const openMongodbOutputStream = require("../Tools/streamToolKits/openMongodbOutputStream");
-const openDataBase = require("../Tools/dataBaseToolKits/openDataBase");
-const openJsonInputStream = require("../Tools/streamToolKits/openJsonFileInputStream");
-const glob = require("glob");
-const streamToMongoDB = require('stream-to-mongo-db').streamToMongoDB;
-const JSONStream      = require('JSONStream');
+const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
+const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle");
+const {
+  transferDataInStream,
+  checkFileAndCollectionStatus,
+  openDataBaseCollection,
+} = require("../Services/smallCsvUploadToDmsService");
 
 router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
   const chunkCount = request.query.chunkCount;
 
-  //
   //console.log(JSON.stringify(request.body));
 
   if (chunkCount % 100 === 0) {
@@ -25,86 +22,44 @@ router.post("/chunkIngest", (request, response) => {
       request.query.chunkCount
     );
   }
-  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
+  //jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
 });
 
-router.post("/chunkIngestComplete", (request, response) => {
-  const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName;
-
-  const fileName =
-    process.env.TMP_DIR_PATH +
-    request.query.fileName +
-    "/" +
-    request.query.fileName +
-    ".json";
-
-  console.log("complete upload on: ", +request.query.fileName);
-
-  openDataBase(process.env.DB_NAME, request.query.collectionName)
-    .then((client) => {
-      const outputDBConfig = { dbURL: process.env.DB_CONNECT, collection: 'xiaohu' };
-      const writableStream = streamToMongoDB(outputDBConfig);
-      let count = 0;
-      setInterval(() => {
-        console.log("count:", count++);
-        const used = process.memoryUsage();
-        for (let key in used) {
-          console.log(`OUTPUT: ${key} ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
-        }
-      }, 5000);
-
-      glob(fileDirPath + "/*.json", (err, files) => {
-        const mongoOutputStream = openMongodbOutputStream(client.collection);
-
-        files.map((fileName) => {
-          fs.createReadStream(fileName)
-          .pipe(JSONStream.parse('*'))
-          .pipe(writableStream);
-        });
-      });
-    })
-    .then(() => {
-      //console.log("store into db successfully");
-    })
-    .catch((err) => {
-      console.log("error info", err);
+router.post("/chunkIngestComplete", async (request, response) => {
+  try {
+    let result = await jsonChunkUploadHandle(request);
+    return response.status(200).json({
+      result: result,
     });
+  } catch (err) {
+    return response.status(500).json({
+      errorInfo: err,
+    });
+  }
 });
 
 router.post(
   "/batchIngest",
   fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
-  (request, response) => {
-    const collectionArr = ["reviews", "rooms", "hosts", "batch"];
+  async (request, response) => {
     try {
-      if (request.file == undefined) {
-        return response.status(400).send("Please upload a CSV file!");
-      }
-      const dataPath = request.file.destination + request.file.filename;
-      console.log({ dataPath });
-      let collectionName = request.body.collectionName;
-
-      if (!collectionArr.includes(collectionName)) {
-        return response.status(400).send("Please check your collectionName!");
-      }
-
-      csvFileIngest(dataPath, collectionName, (err) => {
-        if (err) {
-          console.log("error on the way", err);
-          response.status(500).send({
-            message:
-              "upload the file failed on the way: " + request.file.originalname,
-          });
-        }
-        fs.unlinkSync(dataPath);
-        response.status(200).json({
-          "fileName:": request.file.originalname,
-        });
+      let [dataPath, collectionName] = await checkFileAndCollectionStatus(request);
+      let client = await openDataBaseCollection(collectionName);
+      let transferData = await transferDataInStream(dataPath, client.collection);
+      
+      console.log({transferData});
+      response.status(200).json({
+        resultDbCollection: client.collection.collectionName,
       });
+
+      client.close();
+      
+
     } catch (error) {
       console.log(error);
-      response.status(500).send({
+      response.status(500).json({
         message: "Could not upload the file: " + request.file.originalname,
+        errorInfo: error,
       });
     }
   }

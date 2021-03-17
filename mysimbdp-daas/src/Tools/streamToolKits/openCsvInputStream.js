@@ -12,14 +12,11 @@ const openCsvInputStream = (inputFilePath) => {
   papaparse.parse(fileInputStream, {
     header: true,
     dynamicTyping: true,
-
     skipEmptyLines: true,
 
-    chunk: (results) => {
+    step: (results) => {
       //console.log("chunk input", results.data.length);
-  
-      csvInputStream.push(results.data); // Push results as they are streamed from the file.                
-      
+      csvInputStream.push(results.data); // Push results as they are streamed from the file.                   
     },
 
     complete: () => {
