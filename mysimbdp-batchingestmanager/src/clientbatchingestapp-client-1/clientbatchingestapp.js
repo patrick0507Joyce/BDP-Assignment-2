@@ -1,7 +1,7 @@
 const openCsvInputStream = require("./streamToolKits/openCsvInputStream");
 const postJsonInputStream = require("./streamToolKits/postJsonInputStream");
 
-const clientFileToMysimbdpDaas = (fileName) => {
+const clientbatchingestapp = (fileName) => {
   if (!fileName) {
     return;
   }
@@ -14,7 +14,7 @@ const clientFileToMysimbdpDaas = (fileName) => {
   csvInputStream.pipe(jsonInputStream);
 };
 
-module.exports = clientFileToMysimbdpDaas;
+module.exports = clientbatchingestapp;
 
 //example: node client-file-to-mysimbdp-daas.js --dataPath=reviews-stockholm-1.csv --collectionName=reviews --clientId=1
 //clientbatchingestapp

@@ -8,16 +8,16 @@ const fs = require('fs')
 const path = require('path')
 
 //send file to daas
-const clientFileToMysimbdpDaas = require('./Tools/clientFileToMysimbdpDaas.js')
+const clientbatchingestapp = require('./clientbatchingestapp-client-1/clientbatchingestapp.js')
 
 const postClientFileToDaas = () => {
     fs.readdir(process.env.DATA_DIRECTORY, (err, files) => {
         console.log("Filenames with the .csv extension:");
         if (files) {
-            files.map(async file =>  { 
+            files.map(file =>  { 
                 if (path.extname(file) == ".csv") {
                     console.log({file});
-                    await clientFileToMysimbdpDaas(file);
+                    clientbatchingestapp(file);
                 }
             })
         }
