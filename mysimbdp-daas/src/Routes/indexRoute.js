@@ -9,8 +9,6 @@ router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
   const chunkCount = request.query.chunkCount;
 
-  //console.log(JSON.stringify(request.body));
-
   if (chunkCount % 100 === 0) {
     console.log(
       "fileName",
@@ -29,8 +27,6 @@ router.post("/chunkIngestComplete", async (request, response) => {
     const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName;
     let filesInDir = await jsonStreamUploadToDmsService.readAllJsonsInTmpDir(fileDirPath);
     let batchTransferResult = await jsonStreamUploadToDmsService.traverseChunkInTmpDir(filesInDir, client.collection);
-
-    console.log(batchTransferResult);
 
     response.status(200).json({
       fileDirPath: fileDirPath,

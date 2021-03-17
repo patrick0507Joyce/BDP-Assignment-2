@@ -3,9 +3,6 @@ const { emit } = require("process");
 const stream = require("stream");
 
 const postJsonInputStream = (fileName) => {
-  if (!fileName) {
-    return;
-  }
 
   let serverAddress = process.env.SERVER_ADDRESS;
 
@@ -37,7 +34,6 @@ const postJsonInputStream = (fileName) => {
         }
       )
       .then((res) => {
-        //fs.unlinkSync(dataPath);
         
       })
       .catch((error) => {

@@ -3,37 +3,40 @@ const app = express();
 //middleware
 app.use(express.json());
 
-//for loop of local files
-const fs = require('fs')
-const path = require('path')
+//built in file processing
+const fs = require("fs");
+const path = require("path");
+
+//file change watcher
+const chokidar = require("chokidar");
 
 //send file to daas
-const clientbatchingestapp = require('./clientbatchingestapp-client-1/clientbatchingestapp.js')
+const clientbatchingestapp = require("./clientbatchingestapp-client-1/clientbatchingestapp.js");
 
-const postClientFileToDaas = () => {
-    fs.readdir(process.env.DATA_DIRECTORY, (err, files) => {
-        console.log("Filenames with the .csv extension:");
-        if (files) {
-            files.map(file =>  { 
-                if (path.extname(file) == ".csv") {
-                    console.log({file});
-                    clientbatchingestapp(file);
-                }
-            })
-        }
-    });
-}
+const watcher = chokidar.watch(process.env.DATA_DIRECTORY, {
+  ignored: /^\./,
+  persistent: true,
+});
 
-const checkStagedDirectory = () => {
-    setInterval(postClientFileToDaas, 10000);
-};
+watcher.on("add", async (filePath) => {
+  console.log("File", filePath, "has been added");
+  //get pure file name
+  const fileIndex = filePath.lastIndexOf("/") + 1;
+  const filePureName = filePath.substring(fileIndex, filePath.length);
 
-postClientFileToDaas();
-//checkStagedDirectory();
+  if (path.extname(filePath) == ".csv") {
+    try {
+      let result = await clientbatchingestapp(filePureName);
+      console.log(result);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+});
 
-app.get('/', (request, response) => {
+app.get("/", (request, response) => {
   response.send("connected!");
-})
+});
 
 const PORT = process.env.PORT || 3002;
 

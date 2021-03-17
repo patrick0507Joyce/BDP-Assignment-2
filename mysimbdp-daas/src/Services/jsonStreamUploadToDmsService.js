@@ -18,16 +18,16 @@ const openDataBaseCollection = (collectionName) => {
 };
 
 const readAllJsonsInTmpDir = (fileDirPath) => {
-    return new Promise((resolve, reject) => {
-        glob(fileDirPath + "/*.json", (err, files) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(files);
-            }
-        });
-    })
-}
+  return new Promise((resolve, reject) => {
+    glob(fileDirPath + "/*.json", (err, files) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(files);
+      }
+    });
+  });
+};
 
 const traverseChunkInTmpDir = (files, clientCollection) => {
   return Promise.all(
@@ -44,6 +44,11 @@ const tranferSingleChunkInStream = (filePath, clientCollection) => {
     jsonInputFileStream.pipe(JSONStream.parse("*")).pipe(mongodbOutputStream);
 
     mongodbOutputStream.on("close", () => {
+      //remove tmp json file
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
       resolve(filePath);
     });
 
@@ -61,5 +66,5 @@ module.exports = {
   openDataBaseCollection,
   traverseChunkInTmpDir,
   readAllJsonsInTmpDir,
-  tranferSingleChunkInStream
+  tranferSingleChunkInStream,
 };
