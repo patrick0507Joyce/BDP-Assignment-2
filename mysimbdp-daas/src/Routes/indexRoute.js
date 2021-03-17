@@ -2,11 +2,8 @@ const router = require("express").Router();
 const fs = require("fs");
 const fileUploadMiddleware = require("../Middleware/fileUploadMiddleware");
 const jsonChunkUploadHandle = require("../Tools/jsonChunkToolKits/jsonChunkUploadHandle");
-const {
-  transferDataInStream,
-  checkFileAndCollectionStatus,
-  openDataBaseCollection,
-} = require("../Services/smallCsvUploadToDmsService");
+const smallCsvUploadToDmsService = require("../Services/smallCsvUploadToDmsService");
+const jsonStreamUploadToDmsService = require("../Services/jsonStreamUploadToDmsService");
 
 router.post("/chunkIngest", (request, response) => {
   const fileName = request.query.fileName;
@@ -22,18 +19,29 @@ router.post("/chunkIngest", (request, response) => {
       request.query.chunkCount
     );
   }
-  //jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
+  jsonChunkUploadHandle(fileName, chunkCount, JSON.stringify(request.body));
 });
 
 router.post("/chunkIngestComplete", async (request, response) => {
   try {
-    let result = await jsonChunkUploadHandle(request);
-    return response.status(200).json({
-      result: result,
+    const collectionName = request.query.collectionName;
+    const client = await jsonStreamUploadToDmsService.openDataBaseCollection(collectionName);
+    const fileDirPath = process.env.TMP_DIR_PATH + request.query.fileName;
+    let filesInDir = await jsonStreamUploadToDmsService.readAllJsonsInTmpDir(fileDirPath);
+    let batchTransferResult = await jsonStreamUploadToDmsService.traverseChunkInTmpDir(filesInDir, client.collection);
+
+    console.log(batchTransferResult);
+
+    response.status(200).json({
+      fileDirPath: fileDirPath,
+      batchTransferResult: batchTransferResult,
+      resultDbCollection: client.collection.collectionName,
     });
-  } catch (err) {
-    return response.status(500).json({
-      errorInfo: err,
+    client.close();
+  } catch (error) {
+    console.log(error)
+    response.status(500).json({
+      errorInfo: error,
     });
   }
 });
@@ -43,18 +51,25 @@ router.post(
   fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
   async (request, response) => {
     try {
-      let [dataPath, collectionName] = await checkFileAndCollectionStatus(request);
-      let client = await openDataBaseCollection(collectionName);
-      let transferData = await transferDataInStream(dataPath, client.collection);
-      
-      console.log({transferData});
+      let [
+        dataPath,
+        collectionName,
+      ] = await smallCsvUploadToDmsService.checkFileAndCollectionStatus(
+        request
+      );
+      let client = await smallCsvUploadToDmsService.openDataBaseCollection(
+        collectionName
+      );
+      let transferData = await smallCsvUploadToDmsService.transferDataInStream(
+        dataPath,
+        client.collection
+      );
+
       response.status(200).json({
         resultDbCollection: client.collection.collectionName,
       });
 
       client.close();
-      
-
     } catch (error) {
       console.log(error);
       response.status(500).json({

@@ -22,7 +22,7 @@ const openMongodbOutputStream = (dbCollection, options) => {
   csvOutputStream._write = (record, encoding, callback) => {
     rowCount++;
 
-    if (rowCount % 5 === 0) {
+    if (rowCount % 500 === 0) {
       console.log(
         "count:",
         rowCount,
@@ -67,10 +67,15 @@ const openMongodbOutputStream = (dbCollection, options) => {
   csvOutputStream.on("finish", () => {
     try {
       if (recordBuffer.length > 0) {
-        dbCollection.insertMany(recordBuffer, { ordered: false });
+        dbCollection.insertMany(recordBuffer, { ordered: false }).then(() => {
+          console.log("MONGO DONE");
+          csvOutputStream.emit("close");
+        });
+      } else{
+        console.log("MONGO DONE");
+        csvOutputStream.emit("close");
       }
-      console.log("MONGO DONE");
-      csvOutputStream.emit("close");
+      
     } catch (error) {
       csvOutputStream.emit("error", error);
     }

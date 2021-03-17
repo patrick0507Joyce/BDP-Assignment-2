@@ -27,16 +27,12 @@ const openDataBaseCollection = (collectionName) => {
       })
       .catch((err) => {
         console.log("error info", err);
-        callback(err);
         client.close();
       });
   });
 };
 
 const transferDataInStream = (dataPath, clientCollection) => {
-  
-
-  
   return new Promise((resolve, reject) => {
     const csvInputStream = openCsvInputStream(dataPath);
     const mongodbOutputStream = openMongodbOutputStream(clientCollection);
