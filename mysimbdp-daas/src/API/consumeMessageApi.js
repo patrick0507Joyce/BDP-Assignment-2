@@ -9,9 +9,11 @@ const consumeMessageApi = async () => {
 
         const topicName = process.env.MESSAGE_QUEUE_TOPIC;
 
-        const callback = consumeMessageFromAmqpService.consumeMessageCallback;
+        const handleMessage = consumeMessageFromAmqpService.messageStoreIntoMongoDB;
 
-        consumeMessageFromAmqpService.consumeMessage(amqpChannel, topicName, callback);
+        consumeMessageFromAmqpService.consumeMessage(amqpChannel, topicName, handleMessage);
+
+
     } catch (error) {
         console.log(error);
     }

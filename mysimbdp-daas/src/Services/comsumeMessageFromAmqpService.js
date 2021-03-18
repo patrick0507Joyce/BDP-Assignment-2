@@ -22,7 +22,7 @@ const createChannelInConnection = (amqpConnection) => {
   return amqpConnection.createChannel();
 };
 
-const consumeMessage = async (messageChannel, topicName, callback) => {
+const consumeMessage = async (messageChannel, topicName, handleMessage) => {
   const exchangeName = process.env.MESSAGE_QUEUE_EXCHANGE;
 
   await messageChannel.assertExchange(exchangeName, "topic", {
@@ -45,15 +45,24 @@ const consumeMessage = async (messageChannel, topicName, callback) => {
     topicName || process.env.MESSAGE_QUEUE_TOPIC
   );
 
+
   messageChannel.consume(
     queue,
-    (msg) => {
+    async (msg) => {
+      let messageContent = msg.content.toString();
+      const transferMode = JSON.parse(messageContent).transferMode;
+      if (transferMode === 'file') {
+        let collectionName = JSON.parse(messageContent).collectionName;
+        const client = await openDataBaseCollection(collectionName);
+        await handleMessage(messageContent, client);
+      } else {
+        await handleMessage(messageContent);
+      }
       console.log(
-        " [x] %s [routingKey]",
-        msg.content.toString(),
+        "store success on: [x] %s [routingKey]",
+        messageContent,
         msg.fields.routingKey
       );
-      callback(msg.content.toString());
       messageChannel.ack(msg);
     },
     {
@@ -62,30 +71,22 @@ const consumeMessage = async (messageChannel, topicName, callback) => {
   );
 };
 
-const consumeMessageCallback = async (msg) => {
-  const msgContent = JSON.parse(msg);
-  const payLoadRecord = msgContent.message;
-  const clientId = msgContent.clientId;
-  const collectionName = msgContent.collectionName;
+const messageStoreIntoMongoDB = async (messageContent, fileModeClient) => {
+   let client = null;
+  const parsedMessageContent = JSON.parse(messageContent);
 
-  try {
-    await messageStoreIntoMongoDB(
-      clientId,
-      collectionName,
-      payLoadRecord
-    );
-    console.log("store success on:", msg);
-  } catch (error) {
-    console.log(error);
+  const collectionName = parsedMessageContent.collectionName;
+  const transferMode = parsedMessageContent.transferMode;
+
+  let payLoadRecord = parsedMessageContent.message;
+  let clientId = parsedMessageContent.clientId;
+
+  if (transferMode === 'file') {
+    payLoadRecord = parsedMessageContent;
+    client = fileModeClient;
+  } else {
+    client = await openDataBaseCollection(collectionName);    
   }
-};
-
-const messageStoreIntoMongoDB = async (
-  clientId,
-  collectionName,
-  payLoadRecord
-) => {
-  let client = await openDataBaseCollection(collectionName);
 
   return new Promise((resolve, reject) => {
     if (payLoadRecord) {
@@ -96,7 +97,9 @@ const messageStoreIntoMongoDB = async (
         })
         .catch((err) => {
           console.log("error info", err);
-          reject(err);
+          reject(
+            `store ${clientId}:${collectionName} db failed with error: ${err}`
+          );
         });
     }
   });
@@ -106,6 +109,5 @@ module.exports = {
   openConnectWithMessageBroker,
   createChannelInConnection,
   consumeMessage,
-  consumeMessageCallback,
   messageStoreIntoMongoDB,
 };

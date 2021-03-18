@@ -1,4 +1,5 @@
 const amqp = require("amqplib");
+const openCsvInputStream = require("../Tools/streamToolKits/openCsvInputStream");
 
 const openConnectWithMessageBroker = () => {
   return amqp.connect(process.env.RABBIT);
@@ -14,7 +15,7 @@ const publishMessage = (messageChannel, topicName, payloadMsg) => {
   messageChannel.assertExchange(exchangeName, "topic", {
     durable: false,
   });
-  
+
   return messageChannel.publish(
     exchangeName,
     topicName,
@@ -25,8 +26,41 @@ const publishMessage = (messageChannel, topicName, payloadMsg) => {
   );
 };
 
+const publishEachRecordToBroker = (
+  amqpChannel,
+  collectionName,
+  clientId,
+  topicName,
+  dataPath,
+  publishMessage
+) => {
+  return new Promise((resolve, reject) => {
+    const csvInputStream = openCsvInputStream(dataPath);
+
+    csvInputStream.on("data", (singleMessage) => {
+        singleMessage['collectionName'] = collectionName;
+        singleMessage['transferMode'] = 'file';
+        singleMessage['clientId'] = clientId;
+      publishMessage(amqpChannel, topicName, singleMessage);
+    });
+
+    csvInputStream.on("close", () => {
+      resolve(dataPath);
+    });
+
+    csvInputStream.on("end", () => {
+      resolve(dataPath);
+    });
+
+    csvInputStream.on("error", (err) => {
+      reject(err);
+    });
+  });
+};
+
 module.exports = {
   openConnectWithMessageBroker,
   createChannelInConnection,
   publishMessage,
+  publishEachRecordToBroker,
 };
