@@ -43,7 +43,7 @@ router.post("/chunkIngestComplete", async (request, response) => {
 });
 
 router.post(
-  "/batchIngest",
+  "/smallFileIngest",
   fileUploadMiddleware.single(process.env.UPLOADED_CSV_KEY),
   async (request, response) => {
     try {
