@@ -65,8 +65,8 @@ services:
       - DB_NAME=airbnb
       - UPLOADED_CSV_KEY=csvFile
       - SERVER_ADDRESS_WAIT=http://51.143.2.0
-      - SERVER_ADDRESS=http://51.143.2.0:3001/chunkIngest
-      - SERVER_ADDRESS_COMPLETE=http://51.143.2.0:3001/chunkIngestComplete
+      - SERVER_ADDRESS=http://51.143.2.0:3001/batchMode/chunkIngest
+      - SERVER_ADDRESS_COMPLETE=http://51.143.2.0:3001/batchMode/chunkIngestComplete
       - DATA_DIRECTORY=./client-stage-directory/
       - COLLECTION_NAME=batch
       - CLIENT_ID=1

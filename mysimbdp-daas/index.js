@@ -6,8 +6,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 //Import Routes
-const roomRoute = require('./src/Routes/roomsRoute');
-const reviewRoute = require('./src/Routes/reviewsRoute');
 const batchIngestRoute = require('./src/Routes/batchIngestRoute');
 const streamIngestRoute = require('./src/Routes/streamIngestRoute');
 //middleware
@@ -18,8 +16,6 @@ const consumeMessageApi = require('./src/API/consumeMessageApi');
 consumeMessageApi();
 
 //Route Middlewares
-app.use('/rooms', roomRoute);
-app.use('/reviews', reviewRoute);
 app.use('/batchMode', batchIngestRoute);
 app.use('/streamMode', streamIngestRoute);
 
